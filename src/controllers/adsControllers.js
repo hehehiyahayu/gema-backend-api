@@ -57,8 +57,9 @@ const readDetailAd = async (req, res) => {
 
 const addAd = async (req, res) => {
     try{
-        console.log(req.body)
+        // console.log(req.body.ad_id)
         const id = req.body.ad_id
+        console.log(id);
         const adJson = {
             ad_id : req.body.ad_id,
             category_id : req.body.category_id,
@@ -72,6 +73,7 @@ const addAd = async (req, res) => {
             type_id : req.body.type_id,
         }
         const response = await db.collection("ads").doc(id).set(adJson)
+        console.log('test');
         res.send(response)
     } catch(e) {
         res.send(e)
