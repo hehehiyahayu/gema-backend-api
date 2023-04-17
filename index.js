@@ -51,7 +51,8 @@ app.use('/api/wishlist/', wishlistRoutes.routes)
 app.use('/api/auth/', authRoutes.routes)
 
 const PORT = process.env.PORT || 8080
-app.listen(PORT, () => {
+
+const server = app.listen(PORT, () => {
     console.log(`Server is running on PORT ${PORT}.`)
 })
 
