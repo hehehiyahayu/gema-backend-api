@@ -117,6 +117,42 @@ const readDetailAd = async (req, res) => {
     }
 }
 
+const readDetail = async (req, res) => {
+    try {
+        const adId = req.params.ad_id;
+        const adDoc = await db.collection("ads").doc(adId).get()
+        const adData = adDoc.data();
+        
+        // Get the category document
+        const categoryId = adData.category_id;
+        const categoryQuerySnapshot = await db.collection('categories').where('category_id', '==', categoryId).get();
+        const categoryDoc = categoryQuerySnapshot.docs[0];
+        const categoryData = categoryDoc.data();
+
+        // Get the ad type document
+        const adTypeId = adData.ad_type_id;
+        const adTypeDoc = await db.collection('ad_types').doc(adTypeId).get();
+        const adTypeData = adTypeDoc.data();
+
+        const result = {
+            ad_id: adData.ad_id,
+            ad_type_id: adTypeData.ad_type_name,
+            category_id: categoryData.category_name,
+            condition_id: adData.condition_id,
+            description: adData.description,
+            image: adData.image,
+            nim: adData.nim,
+            price: adData.price,
+            status_id: adData.status_id,
+            title: adData.title,
+        };
+
+        res.send([result])
+    } catch (e) {
+        res.send(e)
+    }
+}
+
 const addAd = async (req, res) => {
     try{
         try {
@@ -272,6 +308,7 @@ const deleteAd = async (req, res) => {
 module.exports = {
     readAllAd,
     readDetailAd,
+    readDetail,
     addAd,
     updateDetailAd,
     deleteAd

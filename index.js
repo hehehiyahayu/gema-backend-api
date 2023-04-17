@@ -1,5 +1,6 @@
 const express = require("express")
 
+
 const userRoutes = require("./src/routes/userRoutes")
 const adRoutes = require("./src/routes/adRoutes")
 const majorRoutes = require("./src/routes/majorRoutes")
@@ -52,4 +53,30 @@ app.use('/api/auth/', authRoutes.routes)
 const PORT = process.env.PORT || 8080
 app.listen(PORT, () => {
     console.log(`Server is running on PORT ${PORT}.`)
+})
+
+
+const io = require('socket.io')(server)
+
+let connectedUsers = [];
+
+io.on('connection', (socket)=>{
+    console.log("Connected Successfuly", socket.id)
+    connectedUsers.push({
+        socketId: socket.id,
+    });
+    console.log(connectedUsers);
+
+    io.emit('connectedUsers', connectedUsers);
+
+    socket.on('disconnect', ()=>{
+        console.log("Disconnected Successfuly", socket.id)
+        connectedUsers = connectedUsers.filter((user) => user.socketId !== socket.id);
+        io.emit('connectedUsers', connectedUsers);
+    })
+
+    socket.on('message', (data)=>{
+        console.log(data)
+        socket.broadcast.emit('message-receive', data);
+    })
 })

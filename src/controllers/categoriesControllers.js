@@ -36,6 +36,30 @@ const readAllCategory = async (req, res) => {
     }
 }
 
+const readCategoryByType = async (req, res) => {
+    try {
+        const categoriesRef = db.collection("categories")
+        const queryRef = categoriesRef.where('ad_type_id', '==', req.params.id)
+        const response = await queryRef.get()
+        let categoriesList = [];
+        if(response.empty){
+            res.status(400).send("No Data Available")
+        } else {
+            response.forEach(doc => {
+                const categories = new categoriesModel(
+                    doc.id,
+                    doc.data().category_id,
+                    doc.data().category_name
+                )
+                categoriesList.push(doc.data())
+            })
+            res.send(categoriesList)
+        }
+    } catch (e) {
+        res.send(e)
+    }
+}
+
 const readDetailCategory = async (req, res) => {
     try {
         const categoryRef = db.collection("categories").doc(req.params.category_id)
@@ -87,6 +111,7 @@ const deleteCategory = async (req, res) => {
 
 module.exports = {
     readAllCategory,
+    readCategoryByType,
     readDetailCategory,
     addCategory,
     updateDetailCategory,

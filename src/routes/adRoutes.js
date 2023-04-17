@@ -1,12 +1,11 @@
 const express = require('express')
-const multer  = require('multer')
-const upload = multer({ dest: 'uploads/adsPhotos' })
-
-const { readAllAd, readDetailAd, addAd, updateDetailAd, deleteAd} = require("../controllers/adsControllers")
+const { readAllAd, readDetailAd, addAd, updateDetailAd, deleteAd, readDetail} = require("../controllers/adsControllers")
 
 const router = express.Router()
 
 router.get('/read/all', readAllAd);
+
+router.get('/read/detail/:ad_id', readDetail);
 
 router.get('/read/:ad_id', readDetailAd);
 
