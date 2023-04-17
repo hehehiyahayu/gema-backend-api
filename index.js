@@ -11,6 +11,7 @@ const reviewRoutes = require("./src/routes/reviewRoutes")
 const statusRoutes = require("./src/routes/statusRoutes")
 const studyProgramRoutes = require("./src/routes/studyProgramRoutes")
 const wishlistRoutes = require("./src/routes/wishlistRoutes")
+const authRoutes = require("./src/routes/authRoutes")
 
 const app = express()
 
@@ -45,6 +46,8 @@ app.use('/api/status/', statusRoutes.routes)
 app.use('/api/studyprogram/', studyProgramRoutes.routes)
 
 app.use('/api/wishlist/', wishlistRoutes.routes)
+
+app.use('/api/auth/', authRoutes.routes)
 
 const PORT = process.env.PORT || 8080
 app.listen(PORT, () => {

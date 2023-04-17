@@ -3,7 +3,7 @@ const { getStorage } = require("firebase/storage")
 const userModel = require("../models/userModel")
 const credentials = require("../../key.json")
 const multer  = require('multer');
-const upload = multer({ dest: 'uploads/' });
+const upload = multer({ dest: 'uploads/' })
 
 try {
     admin.initializeApp({
@@ -150,6 +150,37 @@ const readDetailUser = async (req, res) => {
     }
 }
 
+const getDetailUser = async (req, res) => {
+    try {
+        const userData = await db.collection("users").where('email', '==', req.params.email).get()
+
+        const nim = userData.docs[0].data().nim
+
+        try {
+            const avatarUserName = `userAvatar/avatar_${nim}`
+            const avatarUserFile = bucket.file(avatarUserName)
+            const [url] = await avatarUserFile.getSignedUrl({
+                action: 'read',
+                expires: getDayPlusOne()
+            })
+
+            const userRef = db.collection("users").doc(nim)
+
+            const updateUserRef = userRef.update({
+                avatar : url
+            })
+    
+            const response = await userRef.get()
+            res.send(response.data())
+        } catch (e) {
+            console.error('Error reading photo:', e);
+            res.status(500).send('Error reading photo.');
+        }
+    } catch (e) {
+        res.send(e)
+    }
+}
+
 const addUser = async (req, res) => {
     try{
         try {
@@ -181,7 +212,7 @@ const addUser = async (req, res) => {
             })
 
             try {
-                const avatarUserName = `userAvatar/avatar_${req.params.nim}`
+                const avatarUserName = `userAvatar/avatar_${req.body.nim}`
                 const avatarUserFile = bucket.file(avatarUserName)
                 const [url] = await avatarUserFile.getSignedUrl({
                     action: 'read',
@@ -302,6 +333,7 @@ const deleteUser = async (req, res) => {
 module.exports = {
     readAllUser,
     readDetailUser,
+    getDetailUser,
     addUser,
     updateDetailUser,
     deleteUser
