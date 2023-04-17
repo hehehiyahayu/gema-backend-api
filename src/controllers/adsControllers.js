@@ -1,18 +1,35 @@
 const admin = require('firebase-admin')
 const { getStorage } = require("firebase/storage")
 const adsModel = require("../models/adsModel")
-
 const credentials = require("../../key.json")
+const multer  = require('multer')
+const { v4: uuidv4 } = require('uuid')
+const path = require('path')
+const upload = multer({ dest: 'uploads/adsPhotos' });
 
 try {
     admin.initializeApp({
-        credential: admin.credential.cert(credentials)
+        credential: admin.credential.cert(credentials),
+        storageBucket: 'gs://geraimahasiswa-8d67b.appspot.com'
     })
-} catch (error) {
+} catch (e) {
     admin.app()
 }
 
 const db = admin.firestore()
+const bucket = admin.storage().bucket();
+
+const storage = multer.memoryStorage()
+
+function getDayPlusOne(){
+    let today = new Date();
+    let dd = String(today.getDate() + 1).padStart(2, '0');
+    let mm = String(today.getMonth() + 1).padStart(2, '0'); //January is 0!
+    let yyyy = today.getFullYear();
+    today = mm + '-' + dd + '-' + yyyy;
+
+    return today
+}
 
 const readAllAd = async (req, res) => {
     try {
@@ -22,21 +39,47 @@ const readAllAd = async (req, res) => {
         if(response.empty){
             res.status(400).send("No Data Available")
         } else {
+            response.forEach((doc) => {
+                let adsPhotoName = `adsPhotos/adsPhoto_${doc.data().ad_id}`
+                let adsPhotoFile = bucket.file(adsPhotoName)
+                try {
+                    let [url] = adsPhotoFile.getSignedUrl({
+                        action: 'read',
+                        expires: getDayPlusOne()
+                    })
+
+                    console.log(url)
+                    try {
+                        let updateAdRef = db.collection("ads").doc(doc.data().ad_id).update({
+                            image: url
+                        })
+                        console.log(updateAdRef)
+                    } catch (e) {
+                        console.log(e)
+                    }
+                } catch (e) {
+                    console.log(e)
+                }
+            })
+
             response.forEach(doc => {
-                const ads = new adsModel(
-                    doc.id,
-                    doc.data().ad_id,
-                    doc.data().category_id,
-                    doc.data().condition_id,
-                    doc.data().description,
-                    doc.data().image,
-                    doc.data().nim,
-                    doc.data().price,
-                    doc.data().status_id,
-                    doc.data().title,
-                    doc.data().type_id
-                )
-                adsList.push(doc.data())
+                try {
+                    const ads = new adsModel(
+                        doc.data().ad_id,
+                        doc.data().category_id,
+                        doc.data().condition_id,
+                        doc.data().description,
+                        doc.data().image,
+                        doc.data().nim,
+                        doc.data().price,
+                        doc.data().status_id,
+                        doc.data().title,
+                        doc.data().ad_type_id
+                    )
+                    adsList.push(doc.data())
+                } catch (e) {
+                    console.log(e)
+                }
             })
             res.send(adsList)
         }
@@ -47,9 +90,28 @@ const readAllAd = async (req, res) => {
 
 const readDetailAd = async (req, res) => {
     try {
-        const adsRef = db.collection("ads").doc(req.params.ad_id)
-        const response = await adsRef.get()
-        res.send(response.data())
+        try {
+            const id = req.params.ad_id
+            const adsPhotoName = `adsPhotos/adsPhoto_${id}`
+            const adsPhotoFile = bucket.file(adsPhotoName)
+            const [url] = await adsPhotoFile.getSignedUrl({
+                action: 'read',
+                expires: getDayPlusOne()
+            })
+
+            const adRef = db.collection("ads").doc(id)
+
+            const updateAdRef = adRef.update({
+                image : url
+            })
+    
+            const response = await adRef.get()
+            res.send(response.data())
+
+        } catch (e) {
+            console.error('Error reading photo:', e);
+            res.status(500).send('Error reading photo.');
+        }
     } catch (e) {
         res.send(e)
     }
@@ -57,22 +119,66 @@ const readDetailAd = async (req, res) => {
 
 const addAd = async (req, res) => {
     try{
-        console.log(req.body)
-        const id = req.body.ad_id
-        const adJson = {
-            ad_id : req.body.ad_id,
-            category_id : req.body.category_id,
-            condition_id : req.body.condition_id,
-            description : req.body.description,
-            image : req.body.image,
-            nim : req.body.nim,
-            price : req.body.price,
-            status_id : req.body.status_id,
-            title : req.body.title,
-            type_id : req.body.type_id,
+        try {
+            if(!req.file) {
+                return res.status(400).send('No file uploaded')
+            }
+        
+            if(req.file.mimetype !== 'image/jpeg' && req.file.mimetype !== 'image/jpg' && req.file.mimetype !== 'image/png') {
+                return res.status(400).send('Invalid file type')
+            }
+    
+            if(req.file.size > 1000000){
+                return res.status(400).send('File is too large')
+            }
+
+            const id = uuidv4()
+            const folderName = "adsPhotos"
+            const file = req.file
+            const fileName = `${folderName}/adsPhoto_${id}`
+    
+            bucket.upload(file.path, {
+                destination: fileName,
+                metadata: {
+                    contentType: `${req.file.mimetype}`,
+                    metadata: {
+                        originalName: fileName,
+                        size: file.size
+                    }
+                }
+            })
+
+            try {
+                const adsPhotoName = `adsPhotos/adsPhoto_${id}`
+                const adsPhotoFile = bucket.file(adsPhotoName)
+                const [url] = await adsPhotoFile.getSignedUrl({
+                    action: 'read',
+                    expires: getDayPlusOne()
+                })
+
+                // console.log(req.body)
+                const adJson = {
+                    ad_id: id,
+                    category_id: req.body.category_id,
+                    condition_id: req.body.condition_id,
+                    description: req.body.description,
+                    image: url,
+                    nim: req.body.nim,
+                    price: req.body.price,
+                    status_id: req.body.status_id,
+                    title: req.body.title,
+                    ad_type_id: req.body.ad_type_id,
+                }
+                const response = await db.collection("ads").doc(id).set(adJson)
+                res.send(response)
+            } catch (e) {
+                console.error('Error reading photo:', e);
+                res.status(500).send('Error reading photo.');
+            }
+        } catch (e) {
+            console.error('Error uploading photo:', e);
+            res.status(500).send('Error uploading photo.');
         }
-        const response = await db.collection("ads").doc(id).set(adJson)
-        res.send(response)
     } catch(e) {
         res.send(e)
     }
@@ -81,21 +187,63 @@ const addAd = async (req, res) => {
 const updateDetailAd = async (req, res) => {
     try {
         const id = req.params.ad_id
-        console.log(id)
-        const adsRef = await db.collection("ads").doc(id)
-        .update({
-            ad_id : req.body.ad_id,
-            category_id : req.body.category_id,
-            condition_id : req.body.condition_id,
-            description : req.body.description,
-            image : req.body.image,
-            nim : req.body.nim,
-            price : req.body.price,
-            status_id : req.body.status_id,
-            title : req.body.title,
-            type_id : req.body.type_id,
-        })
-        res.send(adsRef)
+        try{
+            if(req.file){
+                if(req.file.mimetype !== 'image/jpeg' && req.file.mimetype !== 'image/jpg' && req.file.mimetype !== 'image/png') {
+                    return res.status(400).send('Invalid file type')
+                }
+        
+                if(req.file.size > 1000000){
+                    return res.status(400).send('File is too large')
+                }
+            }
+
+            const folderName = "adsPhotos"
+            const file = req.file
+            const fileName = `${folderName}/adsPhoto_${id}`
+
+            bucket.upload(file.path, {
+                destination: fileName,
+                metadata: {
+                    contentType: `${req.file.mimetype}`,
+                    metadata: {
+                        originalName: fileName,
+                        size: file.size
+                    }
+                }
+            })
+
+            try{
+                const adsPhotoName = `userAvatar/avatar_${id}`
+                const adsPhotoFile = bucket.file(adsPhotoName)
+                const [url] = await adsPhotoFile.getSignedUrl({
+                    action: 'read',
+                    expires: getDayPlusOne()
+                })
+    
+                const adsRef = await db.collection("ads").doc(id)
+                .update({
+                    ad_id : id,
+                    category_id : req.body.category_id,
+                    condition_id : req.body.condition_id,
+                    description : req.body.description,
+                    image : url,
+                    nim : req.body.nim,
+                    price : req.body.price,
+                    status_id : req.body.status_id,
+                    title : req.body.title,
+                    ad_type_id : req.body.ad_type_id,
+                })
+                res.send(adsRef)
+            }catch(e){
+                console.error('Error reading photo:', e);
+                res.status(500).send('Error reading photo.');
+            }
+            
+        }catch(e){
+            console.error('Error uploading photo:', e);
+            res.status(500).send('Error uploading photo.');
+        }
     } catch (e) {
         res.send(e)
     }
@@ -103,8 +251,19 @@ const updateDetailAd = async (req, res) => {
 
 const deleteAd = async (req, res) => {
     try {
-        const response = await db.collection("ads").doc(req.params.ad_id).delete()
-        res.send(response)
+        const photoName = `adsPhotos/adsPhoto_${req.params.ad_id}`
+
+        bucket.file(photoName).delete()
+            .then(() => {
+                console.log('Photo deleted successfully.');
+            })
+            .catch((e) => {
+                console.error('Error deleting photo:', e);
+                res.status(500).send('Error deleting photo.');
+            })
+
+        const responseUser = await db.collection("ads").doc(req.params.ad_id).delete()
+        res.send(responseUser)
     } catch (e) {
         res.send(e)
     }
