@@ -39,11 +39,11 @@ const readAllAd = async (req, res) => {
         if(response.empty){
             res.status(400).send("No Data Available")
         } else {
-            response.forEach((doc) => {
+            response.forEach(async (doc) => {
                 let adsPhotoName = `adsPhotos/adsPhoto_${doc.data().ad_id}`
                 let adsPhotoFile = bucket.file(adsPhotoName)
                 try {
-                    let [url] = adsPhotoFile.getSignedUrl({
+                    let [url] = await adsPhotoFile.getSignedUrl({
                         action: 'read',
                         expires: getDayPlusOne()
                     })
