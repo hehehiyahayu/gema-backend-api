@@ -250,7 +250,7 @@ const updateDetailAd = async (req, res) => {
             })
 
             try{
-                const adsPhotoName = `userAvatar/avatar_${id}`
+                const adsPhotoName = `adsPhotos/avatar_${id}`
                 const adsPhotoFile = bucket.file(adsPhotoName)
                 const [url] = await adsPhotoFile.getSignedUrl({
                     action: 'read',
