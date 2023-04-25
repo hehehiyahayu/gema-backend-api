@@ -15,6 +15,7 @@ try {
 }
 
 const db = admin.firestore()
+const storage = admin.storage()
 const bucket = admin.storage().bucket();
 
 function getDayPlusOne(){
@@ -50,11 +51,11 @@ const readAllUser = async (req, res) => {
         if(response.empty){
             res.status(400).send("No Data Available")
         } else {
-            response.forEach((doc) => {
+            response.forEach(async (doc) => {
                 let avatarUserName = `userAvatar/avatar_${doc.data().nim}`
                 let avatarUserFile = bucket.file(avatarUserName)
                 try {
-                    let [url] = avatarUserFile.getSignedUrl({
+                    let [url] = await avatarUserFile.getSignedUrl({
                         action: 'read',
                         expires: getDayPlusOne()
                     })
@@ -73,7 +74,7 @@ const readAllUser = async (req, res) => {
                 }
             })
 
-            response.forEach(doc => {
+            response.forEach((doc) => {
                 try {
                     const users = new userModel(
                         doc.data().avatar,
@@ -95,32 +96,6 @@ const readAllUser = async (req, res) => {
     } catch(e){
         res.send(e)
     }
-    
-    // try {
-    //     const userRef = db.collection("users")
-    //     const response = await userRef.get()
-    //     let usersList = [];
-    //     if(response.empty){
-    //         res.status(400).send("No Data Available")
-    //     } else {
-    //         response.forEach(doc => {
-    //             const users = new userModel(
-    //                 doc.data().avatar,
-    //                 doc.data().email,
-    //                 doc.data().full_name,
-    //                 doc.data().nim,
-    //                 doc.data().password,
-    //                 doc.data().phone_number,
-    //                 doc.data().token,
-    //                 doc.data().username
-    //             )
-    //             usersList.push(doc.data())
-    //         })
-    //         res.send(usersList)
-    //     }
-    // } catch (e) {
-    //     res.send(e)
-    // }
 }
 
 const readDetailUser = async (req, res) => {
