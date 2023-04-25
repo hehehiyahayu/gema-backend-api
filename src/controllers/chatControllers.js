@@ -50,22 +50,40 @@ const readDetailChat = async (req, res) => {
     }
 }
 
+const unreadChat = async (req, res) => {
+    // try{
+    //     // const chatRef = db.collection
+    // }
+}
+
 const addChat = async (req, res) => {
-    try{
-        console.log(req.body)
-        const id = req.body.chat_id
+    try {
+        const date = new Date();
+        const jakartaTimezone = 'Asia/Jakarta';
+        const options = {
+            timeZone: jakartaTimezone,
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',  
+            second: '2-digit'
+        };
+        const dateString = date.toLocaleString('en-US', options);
         const chatJson = {
             ad_id : req.body.ad_id,
-            chat_id : req.body.chat_id,
             message : req.body.message,
             receiver_id : req.body.receiver_id,
             sender_id : req.body.sender_id,
-            status_id : req.body.status_id
-        }
-        const response = await db.collection("chats").doc(id).set(chatJson)
-        res.send(response)
-    } catch(e) {
-        res.send(e)
+            status_id : req.body.status_id,
+            date: dateString.toString()
+        };
+        console.log(req.body);
+        const docRef = await db.collection("chats").doc();
+        const response = await docRef.set(chatJson);
+        res.send(response);
+    } catch (e) {
+        res.send(e);
     }
 }
 
@@ -97,10 +115,56 @@ const deleteChat = async (req, res) => {
     }
 }
 
+const contactList = async(req, res) => {
+    try {
+        db.collection('chats').get().then((querySnapshot) => {
+            const pairs = [];
+            querySnapshot.forEach((doc) => {
+                const sender_id = doc.data().sender_id;
+                const receiver_id = doc.data().receiver_id;
+                const pair = {
+                    sender_id: sender_id,
+                    receiver_id: receiver_id
+                    };
+                    if (!pairs.some(p => p.sender_id === sender_id && p.receiver_id === receiver_id)) {
+                    pairs.push(pair);
+                    }
+                });
+                const userPromises = pairs.map(pair => {
+                    return db.collection("users").where('nim', '==', pair.receiver_id).get();
+                    });
+                
+                    Promise.all(userPromises)
+                    .then((userSnapshots) => {
+                        const contacts = [];
+                        userSnapshots.forEach((userSnapshot, i) => {
+                        const userData = userSnapshot.docs[0].data();
+                        const contact = {
+                            nim: userData.nim,
+                            full_name: userData.full_name,
+                            avatar: userData.avatar,
+                        };
+                        contacts.push(contact);
+                        });
+                        console.log(contacts);
+                        res.send(contacts);
+                    })
+            })
+            .catch((error) => {
+            console.log('Error getting documents: ', error);
+            });
+        
+        
+    } catch (e) {
+        res.send(e)
+    }
+}
+
 module.exports = {
     readAllChat,
     readDetailChat,
     addChat,
     updateDetailChat,
-    deleteChat
+    deleteChat,
+    contactList
 }

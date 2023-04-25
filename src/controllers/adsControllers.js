@@ -133,11 +133,19 @@ const readDetail = async (req, res) => {
         const adTypeId = adData.ad_type_id;
         const adTypeDoc = await db.collection('ad_types').doc(adTypeId).get();
         const adTypeData = adTypeDoc.data();
+        
+        const userId = adData.nim;
+        const userDoc = await db.collection('users').doc(userId).get();
+        const userData = userDoc.data();
+        
+        const conditionId = adData.condition_id;
+        const conditionDoc = await db.collection('conditions').doc(conditionId).get();
+        const conditionData = conditionDoc.data();
 
         const result = {
             ad_id: adData.ad_id,
-            ad_type_id: adTypeData.ad_type_name,
-            category_id: categoryData.category_name,
+            ad_type_id: adData.ad_type_id,
+            category_id: adData.category_id,
             condition_id: adData.condition_id,
             description: adData.description,
             image: adData.image,
@@ -145,6 +153,11 @@ const readDetail = async (req, res) => {
             price: adData.price,
             status_id: adData.status_id,
             title: adData.title,
+            ad_type_name: adTypeData.ad_type_name,
+            category_name: categoryData.category_name,
+            full_name: userData.full_name,
+            avatar: userData.avatar,
+            condition_name: conditionData.condition_name,
         };
 
         res.send([result])
@@ -158,10 +171,12 @@ const addAd = async (req, res) => {
         try {
             if(!req.file) {
                 return res.status(400).send('No file uploaded')
+            }else{
+                console.log(req.file)
             }
         
-            if(req.file.mimetype !== 'image/jpeg' && req.file.mimetype !== 'image/jpg' && req.file.mimetype !== 'image/png') {
-                return res.status(400).send('Invalid file type')
+            if(req.file.mimetype !== 'image/jpeg' && req.file.mimetype !== 'image/jpg' && req.file.mimetype !== 'image/png' && req.file.mimetype !== 'application/octet-stream') {
+                return res.status(400).send('Invalid file type!')
             }
     
             if(req.file.size > 1000000){
