@@ -78,7 +78,6 @@ const addChat = async (req, res) => {
             status_id : req.body.status_id,
             date: dateString.toString()
         };
-        console.log(req.body);
         const docRef = await db.collection("chats").doc();
         const response = await docRef.set(chatJson);
         res.send(response);
