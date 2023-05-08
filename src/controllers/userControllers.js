@@ -115,7 +115,7 @@ const readDetailUser = async (req, res) => {
             })
     
             const response = await userRef.get()
-            res.send(response.data())
+            res.send([response.data()])
         } catch (e) {
             console.error('Error reading photo:', e);
             res.status(500).send('Error reading photo.');
