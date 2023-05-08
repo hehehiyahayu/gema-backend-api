@@ -224,44 +224,67 @@ const addUser = async (req, res) => {
 const updateDetailUser = async (req, res) => {
     try {
         const id = req.params.nim
-        try{
-            if(req.file){
-                if(req.file.mimetype !== 'image/jpeg' && req.file.mimetype !== 'image/jpg' && req.file.mimetype !== 'image/png') {
-                    return res.status(400).send('Invalid file type')
-                }
-        
-                if(req.file.size > 1000000){
-                    return res.status(400).send('File is too large')
-                }
-            }
-
-            const folderName = "userAvatar"
-            const file = req.file
-            const fileName = `${folderName}/avatar_${id}`
-
-            bucket.upload(file.path, {
-                destination: fileName,
-                metadata: {
-                    contentType: `${req.file.mimetype}`,
-                    metadata: {
-                        originalName: fileName,
-                        size: file.size
+        if (req.file){
+            try{
+                if(req.file){
+                    if(req.file.mimetype !== 'image/jpeg' && req.file.mimetype !== 'image/jpg' && req.file.mimetype !== 'image/png') {
+                        return res.status(400).send('Invalid file type')
+                    }
+            
+                    if(req.file.size > 1000000){
+                        return res.status(400).send('File is too large')
                     }
                 }
-            })
-
-            try{
-                const avatarUserName = `userAvatar/avatar_${req.params.nim}`
-                const avatarUserFile = bucket.file(avatarUserName)
-                const [url] = await avatarUserFile.getSignedUrl({
-                    action: 'read',
-                    expires: getDayPlusOne()
+    
+                const folderName = "userAvatar"
+                const file = req.file
+                const fileName = `${folderName}/avatar_${id}`
+    
+                bucket.upload(file.path, {
+                    destination: fileName,
+                    metadata: {
+                        contentType: `${req.file.mimetype}`,
+                        metadata: {
+                            originalName: fileName,
+                            size: file.size
+                        }
+                    }
                 })
     
-                // console.log(id)
-                const userRef = await db.collection("users").doc(id)
+                try{
+                    const avatarUserName = `userAvatar/avatar_${req.params.nim}`
+                    const avatarUserFile = bucket.file(avatarUserName)
+                    const [url] = await avatarUserFile.getSignedUrl({
+                        action: 'read',
+                        expires: getDayPlusOne()
+                    })
+        
+                    // console.log(id)
+                    const userRef = await db.collection("users").doc(id)
+                    .update({
+                        avatar: url,
+                        email: req.body.email,
+                        full_name : req.body.full_name,
+                        nim : req.body.nim,
+                        password : req.body.password,
+                        phone_number : req.body.phone_number,
+                        token : req.body.token,
+                        username : req.body.username,
+                    })
+                    res.send(userRef)
+                }catch(e){
+                    console.error('Error reading photo:', e);
+                    res.status(500).send('Error reading photo.');
+                }
+                
+            }catch(e){
+                console.error('Error uploading photo:', e);
+                res.status(500).send('Error uploading photo.');
+            }
+        } else{
+            console.log(req.body)
+            const userRef = await db.collection("users").doc(id)
                 .update({
-                    avatar: url,
                     email: req.body.email,
                     full_name : req.body.full_name,
                     nim : req.body.nim,
@@ -270,15 +293,7 @@ const updateDetailUser = async (req, res) => {
                     token : req.body.token,
                     username : req.body.username,
                 })
-                res.send(userRef)
-            }catch(e){
-                console.error('Error reading photo:', e);
-                res.status(500).send('Error reading photo.');
-            }
-            
-        }catch(e){
-            console.error('Error uploading photo:', e);
-            res.status(500).send('Error uploading photo.');
+            res.send(userRef)
         }
     } catch (e) {
         res.send(e)

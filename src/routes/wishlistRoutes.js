@@ -3,7 +3,7 @@ const { readAllWishlist, readDetailWishlist, addWishlist, updateDetailWishlist, 
 
 const router = express.Router()
 
-router.get('/read/all', readAllWishlist);
+router.get('/read/all/:user_id', readAllWishlist);
 
 router.get('/read/:wishlist_id', readDetailWishlist);
 

@@ -15,8 +15,9 @@ const db = admin.firestore()
 
 const readAllWishlist = async (req, res) => {
     try {
+        const userId = req.params.user_id;
         const wishlistsListRef = db.collection("wishlists")
-        const response = await wishlistsListRef.get()
+        const response = await wishlistsListRef.where('nim', '==', userId).get()
         let wishlistsList = [];
         if(response.empty){
             res.status(400).send("No Data Available")
@@ -49,7 +50,6 @@ const readDetailWishlist = async (req, res) => {
 
 const addWishlist = async (req, res) => {
     try{
-        console.log(req.body)
         const id = req.body.wishlist_id
         const wishlistJson = {
             ad_id : req.body.ad_id,
