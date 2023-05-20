@@ -1,6 +1,7 @@
 const admin = require('firebase-admin')
 const { getStorage } = require("firebase/storage")
 const wishlistsModel = require("../models/wishlistsModel")
+const { v4: uuidv4 } = require('uuid')
 const credentials = require("../../key.json")
 
 try {
@@ -50,11 +51,12 @@ const readDetailWishlist = async (req, res) => {
 
 const addWishlist = async (req, res) => {
     try{
-        const id = req.body.wishlist_id
+        console.log(req.body)
+        const id = uuidv4()
         const wishlistJson = {
             ad_id : req.body.ad_id,
             nim : req.body.nim,
-            wishlist_id : req.body.wishlist_id
+            wishlist_id : id
         }
         const response = await db.collection("wishlists").doc(id).set(wishlistJson)
         res.send(response)

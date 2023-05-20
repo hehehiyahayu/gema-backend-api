@@ -1,4 +1,5 @@
 const admin = require('firebase-admin')
+const { Timestamp, FieldValue } = require('firebase-admin/firestore')
 const { getStorage } = require("firebase/storage")
 const adsModel = require("../models/adsModel")
 const credentials = require("../../key.json")
@@ -74,7 +75,8 @@ const readAllAd = async (req, res) => {
                         doc.data().price,
                         doc.data().status_id,
                         doc.data().title,
-                        doc.data().ad_type_id
+                        doc.data().ad_type_id,
+                        doc.data().timestamp
                     )
                     adsList.push(doc.data())
                 } catch (e) {
@@ -153,6 +155,7 @@ const readDetail = async (req, res) => {
             price: adData.price,
             status_id: adData.status_id,
             title: adData.title,
+            timestamp: adData.timestamp,
             ad_type_name: adTypeData.ad_type_name,
             category_name: categoryData.category_name,
             full_name: userData.full_name,
@@ -219,6 +222,7 @@ const addAd = async (req, res) => {
                     status_id: req.body.status_id,
                     title: req.body.title,
                     ad_type_id: req.body.ad_type_id,
+                    timestamp: FieldValue.serverTimestamp()
                 }
                 const response = await db.collection("ads").doc(id).set(adJson)
                 res.send(response)

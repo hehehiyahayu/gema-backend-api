@@ -49,7 +49,7 @@ require('dotenv').config
 const db = admin.firestore()
 const bucket = admin.storage().bucket()
 
-const signUp = (req, res) => {
+const signUp = async (req, res) => {
     const { email, password } = req.body
     
     // getAuth().createUser({
@@ -62,7 +62,7 @@ const signUp = (req, res) => {
     // })
 
     const auth = getAuth();
-    createUserWithEmailAndPassword(auth, email, password)
+    await createUserWithEmailAndPassword(auth, email, password)
     .then(userCredential => {
         res.status(200).send(`User ${userCredential.uid} registered successfully`)
     }).catch(error => {
@@ -78,7 +78,7 @@ const signUp = (req, res) => {
     //     })
 }
 
-const signIn = (req, res) => {
+const signIn = async (req, res) => {
     const { email, password } = req.body
 
     // const auth = firebase.auth();
@@ -86,7 +86,7 @@ const signIn = (req, res) => {
     // console.log()
 
     const auth = getAuth();
-    signInWithEmailAndPassword(auth, email, password)
+    await signInWithEmailAndPassword(auth, email, password)
     .then((userCredential) => { 
         const user = userCredential.user;
         res.status(200).send(user)
