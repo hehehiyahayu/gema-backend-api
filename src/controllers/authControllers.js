@@ -90,6 +90,7 @@ const signIn = (req, res) => {
     .then((userCredential) => { 
         const user = userCredential.user;
         res.status(200).send(user)
+        console.log('Logged In');
     })
     .catch((error) => {
         const errorCode = error.code;

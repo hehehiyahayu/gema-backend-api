@@ -237,68 +237,80 @@ const addAd = async (req, res) => {
 
 const updateDetailAd = async (req, res) => {
     try {
-        const id = req.params.ad_id
-        try{
-            if(req.file){
-                if(req.file.mimetype !== 'image/jpeg' && req.file.mimetype !== 'image/jpg' && req.file.mimetype !== 'image/png') {
-                    return res.status(400).send('Invalid file type')
-                }
-        
-                if(req.file.size > 1000000){
-                    return res.status(400).send('File is too large')
-                }
-            }
-
-            const folderName = "adsPhotos"
-            const file = req.file
-            const fileName = `${folderName}/adsPhoto_${id}`
-
-            bucket.upload(file.path, {
-                destination: fileName,
-                metadata: {
-                    contentType: `${req.file.mimetype}`,
-                    metadata: {
-                        originalName: fileName,
-                        size: file.size
-                    }
-                }
-            })
-
-            try{
-                const adsPhotoName = `adsPhotos/adsPhoto_${id}`
-                const adsPhotoFile = bucket.file(adsPhotoName)
-                const [url] = await adsPhotoFile.getSignedUrl({
-                    action: 'read',
-                    expires: getDayPlusOne()
-                })
-    
-                const adsRef = await db.collection("ads").doc(id)
-                .update({
-                    ad_id : id,
-                    category_id : req.body.category_id,
-                    condition_id : req.body.condition_id,
-                    description : req.body.description,
-                    image : url,
-                    nim : req.body.nim,
-                    price : req.body.price,
-                    status_id : req.body.status_id,
-                    title : req.body.title,
-                    ad_type_id : req.body.ad_type_id,
-                })
-                res.send(adsRef)
-            }catch(e){
-                console.error('Error reading photo:', e);
-                res.status(500).send('Error reading photo.');
-            }
-            
-        }catch(e){
-            console.error('Error uploading photo:', e);
-            res.status(500).send('Error uploading photo.');
+      const id = req.params.ad_id;
+      
+      if (req.file) {
+        if (
+          req.file.mimetype !== 'image/jpeg' &&
+          req.file.mimetype !== 'image/jpg' &&
+          req.file.mimetype !== 'image/png' &&
+          req.file.mimetype !== 'application/octet-stream'
+        ) {
+          return res.status(400).send('Invalid file type');
         }
-    } catch (e) {
-        res.send(e)
+  
+        if (req.file.size > 1000000) {
+          return res.status(400).send('File is too large');
+        }
+  
+        const folderName = 'adsPhotos';
+        const file = req.file;
+        const fileName = `${folderName}/adsPhoto_${id}`;
+  
+        await bucket.upload(file.path, {
+          destination: fileName,
+          metadata: {
+            contentType: req.file.mimetype,
+            metadata: {
+              originalName: fileName,
+              size: file.size,
+            },
+          },
+        });
+  
+        const adsPhotoName = `adsPhotos/adsPhoto_${id}`;
+        const adsPhotoFile = bucket.file(adsPhotoName);
+        const [url] = await adsPhotoFile.getSignedUrl({
+          action: 'read',
+          expires: getDayPlusOne(),
+        });
+  
+        const updateData = {
+          ad_id: id,
+          category_id: req.body.category_id,
+          condition_id: req.body.condition_id,
+          description: req.body.description,
+          nim: req.body.nim,
+          price: req.body.price,
+          status_id: req.body.status_id,
+          title: req.body.title,
+          ad_type_id: req.body.ad_type_id,
+          image: url, // Update the image URL if it exists
+        };
+  
+        const adsRef = await db.collection('ads').doc(id).update(updateData);
+        res.send(adsRef);
+      } else {
+        const updateData = {
+          ad_id: id,
+          category_id: req.body.category_id,
+          condition_id: req.body.condition_id,
+          description: req.body.description,
+          nim: req.body.nim,
+          price: req.body.price,
+          status_id: req.body.status_id,
+          title: req.body.title,
+          ad_type_id: req.body.ad_type_id,
+        };
+  
+        const adsRef = await db.collection('ads').doc(id).update(updateData);
+        res.send(adsRef);
+      }
+    } catch (error) {
+      console.error('Error occurred while updating ad:', error);
+      res.status(500).send('Error occurred while updating ad.');
     }
-}
+  };
 
 const deleteAd = async (req, res) => {
     try {
