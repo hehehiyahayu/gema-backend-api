@@ -57,27 +57,27 @@ const server = app.listen(PORT, () => {
 })
 
 
-const io = require('socket.io')(server)
+// const io = require('socket.io')(server)
 
-let connectedUsers = [];
+// let connectedUsers = [];
 
-io.on('connection', (socket)=>{
-    console.log("Connected Successfuly", socket.id)
-    connectedUsers.push({
-        socketId: socket.id,
-    });
-    console.log(connectedUsers);
+// io.on('connection', (socket)=>{
+//     console.log("Connected Successfuly", socket.id)
+//     connectedUsers.push({
+//         socketId: socket.id,
+//     });
+//     console.log(connectedUsers);
 
-    io.emit('connectedUsers', connectedUsers);
+//     io.emit('connectedUsers', connectedUsers);
 
-    socket.on('disconnect', ()=>{
-        console.log("Disconnected Successfuly", socket.id)
-        connectedUsers = connectedUsers.filter((user) => user.socketId !== socket.id);
-        io.emit('connectedUsers', connectedUsers);
-    })
+//     socket.on('disconnect', ()=>{
+//         console.log("Disconnected Successfuly", socket.id)
+//         connectedUsers = connectedUsers.filter((user) => user.socketId !== socket.id);
+//         io.emit('connectedUsers', connectedUsers);
+//     })
 
-    socket.on('message', (data)=>{
-        console.log(data)
-        socket.broadcast.emit('message-receive', data);
-    })
-})
+//     socket.on('message', (data)=>{
+//         console.log(data)
+//         socket.broadcast.emit('message-receive', data);
+//     })
+// })
