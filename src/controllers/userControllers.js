@@ -158,12 +158,14 @@ const getDetailUser = async (req, res) => {
 
 const addUser = async (req, res) => {
     try{
+        console.log('test');
         try {
+            console.log('test');
             if(!req.file) {
                 return res.status(400).send('No file uploaded')
             }
         
-            if(req.file.mimetype !== 'image/jpeg' && req.file.mimetype !== 'image/jpg' && req.file.mimetype !== 'image/png') {
+            if(req.file.mimetype !== 'image/jpeg' && req.file.mimetype !== 'image/jpg' && req.file.mimetype !== 'image/png' && req.file.mimetype !== 'application/octet-stream') {
                 return res.status(400).send('Invalid file type')
             }
     

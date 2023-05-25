@@ -7,7 +7,7 @@ router.get('/read/all', readAllChat);
 
 router.get('/read/:chat_id', readDetailChat);
 
-router.get('/contact/', contactList);
+router.get('/contact/:nim', contactList);
 
 router.post('/create',addChat);
 

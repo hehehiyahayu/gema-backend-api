@@ -155,7 +155,6 @@ const readDetail = async (req, res) => {
             price: adData.price,
             status_id: adData.status_id,
             title: adData.title,
-            timestamp: adData.timestamp,
             ad_type_name: adTypeData.ad_type_name,
             category_name: categoryData.category_name,
             full_name: userData.full_name,
