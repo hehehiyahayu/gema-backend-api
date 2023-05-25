@@ -1,5 +1,5 @@
 const express = require("express")
-
+const ngrok = require("ngrok")
 
 const userRoutes = require("./src/routes/userRoutes")
 const adRoutes = require("./src/routes/adRoutes")
@@ -57,27 +57,40 @@ const server = app.listen(PORT, () => {
 })
 
 
-// const io = require('socket.io')(server)
+const io = require('socket.io')(server)
 
-// let connectedUsers = [];
+let connectedUsers = [];
 
-// io.on('connection', (socket)=>{
-//     console.log("Connected Successfuly", socket.id)
-//     connectedUsers.push({
-//         socketId: socket.id,
-//     });
-//     console.log(connectedUsers);
+io.on('connection', (socket)=>{
+    console.log("Connected Successfuly", socket.id)
+    connectedUsers.push({
+        socketId: socket.id,
+    });
+    console.log(connectedUsers);
 
-//     io.emit('connectedUsers', connectedUsers);
+    io.emit('connectedUsers', connectedUsers);
 
-//     socket.on('disconnect', ()=>{
-//         console.log("Disconnected Successfuly", socket.id)
-//         connectedUsers = connectedUsers.filter((user) => user.socketId !== socket.id);
-//         io.emit('connectedUsers', connectedUsers);
-//     })
+    socket.on('disconnect', ()=>{
+        console.log("Disconnected Successfuly", socket.id)
+        connectedUsers = connectedUsers.filter((user) => user.socketId !== socket.id);
+        io.emit('connectedUsers', connectedUsers);
+    })
 
-//     socket.on('message', (data)=>{
-//         console.log(data)
-//         socket.broadcast.emit('message-receive', data);
-//     })
-// })
+    socket.on('message', (data)=>{
+        console.log(data)
+        socket.broadcast.emit('message-receive', data);
+    })
+})
+
+ngrok.connect({
+    proto : 'http',
+    addr : process.env.PORT,
+}, (err, url) => {
+    if(err) {
+        console.error('Error while connecting Ngrok',err);
+        return new Error('Ngrok Failed');
+    }
+})
+
+// taskkill /f /im ngrok.exe    : untuk melakukan restart server ngrok.
+// ngrok http 8080              : untuk menjalankan server ngrok untuk aplikasi ini.
